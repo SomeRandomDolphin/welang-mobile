@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:welangflood/src/constants/color.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
 import 'dart:core';
 import 'package:welangflood/src/features/screens/entri/widgets/map_picker_screen.dart';
@@ -20,8 +21,7 @@ class LocationPicker extends StatefulWidget {
 }
 
 class _LocationPickerState extends State<LocationPicker> {
-  TextEditingController _locationController = TextEditingController();
-  GoogleMapController? _mapController;
+  final TextEditingController _locationController = TextEditingController();
   LatLng _pickedLocation = const LatLng(-7.741785, 112.797416);
 
   @override
@@ -54,13 +54,32 @@ class _LocationPickerState extends State<LocationPicker> {
                 children: [
                   SizedBox(
                     height: 200,
-                    child: GoogleMap(
-                      initialCameraPosition: CameraPosition(
-                        target: _pickedLocation,
-                        zoom: 14.0,
+                    child: FlutterMap(
+                      options: MapOptions(
+                        initialCenter: _pickedLocation,
+                        initialZoom: 14.0,
+                        onTap: (tapPosition, latLng) => _selectLocation(latLng),
                       ),
-                      onMapCreated: _onMapCreated,
-                      onTap: _selectLocation,
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.example.welangflood',
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: _pickedLocation,
+                              width: 40,
+                              height: 40,
+                              child: const Icon(
+                                Icons.location_on,
+                                color: Colors.red,
+                                size: 40,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                   Row(
@@ -92,10 +111,6 @@ class _LocationPickerState extends State<LocationPicker> {
     );
   }
 
-  void _onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
-  }
-
   Future<void> _selectLocation(LatLng latLng) async {
     setState(() {
       _pickedLocation = latLng;
@@ -110,7 +125,7 @@ class _LocationPickerState extends State<LocationPicker> {
     LatLng? selectedLocation = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MapPickerScreen(initialLocation: _pickedLocation,),
+        builder: (context) => MapPickerScreen(initialLocation: _pickedLocation),
       ),
     );
 
@@ -132,5 +147,4 @@ class _LocationPickerState extends State<LocationPicker> {
     super.dispose();
   }
 }
-
 

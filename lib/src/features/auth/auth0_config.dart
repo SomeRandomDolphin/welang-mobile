@@ -1,22 +1,23 @@
-import 'package:flutter_auth0/flutter_auth0.dart';
-import 'package:welangflood/src/common_widets/transition/transition.dart';
+import 'package:auth0_flutter/auth0_flutter.dart';
+import 'package:flutter/material.dart';
 import 'package:welangflood/src/features/screens/home/home.dart';
 
 final Auth0 auth0 = Auth0(
-  clientId: 'QXcBQwzxgp6Fgjw0VBbbKyFczYQqjTK0',
-  domain: 'dev-fqiljwfi74k1obuu.us.auth0.com',
+  'dev-2jllqhrcpo0w5k8i.us.auth0.com',
+  '4gyhxlY1Uchu1IBlxmcZAAvKEyHFKx2l',
 );
 
-void loginWithAuth0(BuildContext context) async {
+Future<void> loginWithAuth0(BuildContext context) async {
   try {
-    final authResult = await auth0.webAuth.authorize({
-      'response_type': 'token',
-      'client_id': 'YOUR_CLIENT_ID',
-      'redirect_uri': 'YOUR_REDIRECT_URI',
-      'scope': 'openid profile email',
-    });
-    print('Access token: ${authResult.accessToken}');
-    TransitionUtils.navigateWithFadeTransition(context, const Home());
+    final credentials = await auth0.webAuthentication(scheme: 'com.example.welangflood').login(
+      scopes: {'openid', 'profile', 'email'},
+    );
+    print('Access token: ${credentials.accessToken}');
+    if (!context.mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const Home()),
+      (route) => false,
+    );
   } catch (e) {
     print('Error during login: $e');
   }

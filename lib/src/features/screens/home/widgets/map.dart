@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:welangflood/src/constants/color.dart';
 
 class ViewMap extends StatefulWidget {
@@ -11,23 +12,19 @@ class ViewMap extends StatefulWidget {
 }
 
 class _ViewMapState extends State<ViewMap> {
-  late GoogleMapController mapController;
+  final MapController _mapController = MapController();
 
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
-  }
-
-  BitmapDescriptor _getMarkerIcon(double height) {
+  Color _getMarkerColor(double height) {
     if (height < 10) {
-      return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
+      return Colors.green;
     } else if (height >= 10 && height < 20) {
-      return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
+      return Colors.yellow.shade700;
     } else if (height >= 20 && height < 30) {
-      return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
+      return Colors.orange;
     } else if (height >= 30 && height < 50) {
-      return BitmapDescriptor.defaultMarkerWithHue(25);
+      return Colors.deepOrange;
     } else {
-      return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
+      return Colors.red;
     }
   }
 
@@ -52,89 +49,123 @@ class _ViewMapState extends State<ViewMap> {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    CameraPosition initialPosition = const CameraPosition(
-      target: LatLng(-7.741785, 112.797416), // Welang Lama, Pasuruan, Indonesia
-      zoom: 14.0,
-    );
-
     List<Map<String, dynamic>> dummyData = _generateDummyData(5);
 
-    Set<Marker> markers = dummyData.map((data) {
+    List<Marker> markers = dummyData.map((data) {
       double height = data['height'];
       LatLng position = data['position'];
       String petugas = data['petugas'];
       return Marker(
-        markerId: MarkerId(position.toString()),
-        position: position,
-        icon: _getMarkerIcon(height),
-        infoWindow: InfoWindow(
-          title: 'Tinggi: ${height.toStringAsFixed(2)} cm',
-          snippet: 'Petugas: $petugas',
-        ),
-      );
-    }).toSet();
-
-    return Container(
-      constraints: BoxConstraints(
-        maxWidth: screenWidth > 375.0 ? 375.0 : screenWidth,
-        maxHeight: screenHeight > 450.0 ? 450.0 : screenHeight,
-      ),
-      decoration: BoxDecoration(
-        border: Border.all(color: tPrimaryColor),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Stack(
-          children: [
-            GoogleMap(
-              initialCameraPosition: initialPosition,
-              mapType: MapType.normal,
-              myLocationButtonEnabled: true,
-              zoomControlsEnabled: false,
-              onMapCreated: _onMapCreated,
-              markers: markers,
-            ),
-            Positioned(
-              top: 16.0,
-              right: 16.0,
-              child: Column(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      color: tPrimaryColor,
-                    ),
-                    child: IconButton(
-                      onPressed: () {
-                        mapController.animateCamera(CameraUpdate.zoomIn());
-                      },
-                      icon: const Icon(Icons.add, color: Colors.white),
-                    ),
-                  ),
-                  const SizedBox(height: 8.0),
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      color: tPrimaryColor,
-                    ),
-                    child: IconButton(
-                      onPressed: () {
-                        mapController.animateCamera(CameraUpdate.zoomOut());
-                      },
-                      icon: const Icon(Icons.remove, color: Colors.white),
-                    ),
+        point: position,
+        width: 40,
+        height: 40,
+        child: GestureDetector(
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text('Tinggi: ${height.toStringAsFixed(2)} cm'),
+                content: Text('Petugas: $petugas'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('OK'),
                   ),
                 ],
               ),
-            ),
-          ],
+            );
+          },
+          child: Icon(
+            Icons.location_on,
+            color: _getMarkerColor(height),
+            size: 40,
+          ),
         ),
-      ),
+      );
+    }).toList();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final mapWidth = constraints.maxWidth > 0 ? constraints.maxWidth : screenWidth;
+        final mapHeight = constraints.maxHeight.isFinite && constraints.maxHeight > 0
+            ? constraints.maxHeight
+            : screenHeight * 0.45;
+
+        return Container(
+          width: mapWidth,
+          height: mapHeight,
+          decoration: BoxDecoration(
+            border: Border.all(color: tPrimaryColor),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Stack(
+              children: [
+                FlutterMap(
+                  mapController: _mapController,
+                  options: const MapOptions(
+                    initialCenter: LatLng(-7.741785, 112.797416),
+                    initialZoom: 14.0,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.welangflood',
+                    ),
+                    MarkerLayer(markers: markers),
+                  ],
+                ),
+                Positioned(
+                  top: 16.0,
+                  right: 16.0,
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(6),
+                          color: tPrimaryColor,
+                        ),
+                        child: IconButton(
+                          onPressed: () {
+                            final currentZoom = _mapController.camera.zoom;
+                            _mapController.move(
+                              _mapController.camera.center,
+                              currentZoom + 1,
+                            );
+                          },
+                          icon: const Icon(Icons.add, color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(height: 8.0),
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(6),
+                          color: tPrimaryColor,
+                        ),
+                        child: IconButton(
+                          onPressed: () {
+                            final currentZoom = _mapController.camera.zoom;
+                            _mapController.move(
+                              _mapController.camera.center,
+                              currentZoom - 1,
+                            );
+                          },
+                          icon: const Icon(Icons.remove, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

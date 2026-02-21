@@ -9,7 +9,7 @@ import 'package:welangflood/src/constants/text_string.dart';
 import 'package:welangflood/src/features/auth/auth0_config.dart';
 import 'package:welangflood/src/features/screens/login/login.dart';
 import 'package:welangflood/src/features/screens/register/widgets/alreadytext.dart';
-import 'package:flutter_auth0/flutter_auth0.dart';
+
 
 class Register extends StatelessWidget {
   const Register({Key? key}) : super(key: key);

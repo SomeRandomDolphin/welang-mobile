@@ -29,27 +29,26 @@ class _HomeState extends State<Home> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      body: Center(
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.only(
-                top: screenHeight * 0.08,
-                left: screenWidth * 0.065,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  const Filter(),
-                  SizedBox(width: screenWidth * 0.15),
-                  const HeadlineText(),
-                ],
-              ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: screenHeight * 0.03,
+              left: screenWidth * 0.065,
+              right: screenWidth * 0.065,
             ),
-            SizedBox(height: screenHeight * 0.04),
-            Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    const Filter(),
+                    SizedBox(width: screenWidth * 0.15),
+                    const HeadlineText(),
+                  ],
+                ),
+                SizedBox(height: screenHeight * 0.04),
                 const SubtitleText(text: tEntriSurvei),
                 SizedBox(height: screenHeight * 0.01),
                 const EntriButton(),
@@ -64,10 +63,13 @@ class _HomeState extends State<Home> {
                         'Tanggal: ${_surveiData!.tanggal}\n'
                         'Lokasi: ${_surveiData!.lokasi}',
                   ),
-                const ViewMap(),
+                SizedBox(
+                  height: screenHeight * 0.45,
+                  child: const ViewMap(),
+                ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

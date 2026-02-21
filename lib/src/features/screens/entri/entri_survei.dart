@@ -81,7 +81,7 @@ class EntriSurvei extends StatelessWidget {
               LocationPicker(
                 hintText: 'Lokasi',
                 onLocationSelected: (location) {
-                  lokasi = location as String?;
+                  lokasi = '${location.latitude}, ${location.longitude}';
                 },
               ),
 

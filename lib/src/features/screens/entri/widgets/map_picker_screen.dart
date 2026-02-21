@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:welangflood/src/constants/color.dart';
 import 'package:geocoding/geocoding.dart';
 
@@ -13,21 +14,14 @@ class MapPickerScreen extends StatefulWidget {
 }
 
 class _MapPickerScreenState extends State<MapPickerScreen> {
-  late GoogleMapController _mapController;
+  final MapController _mapController = MapController();
   late LatLng _selectedLocation;
-  final Set<Marker> _markers = {};
   String _selectedAddress = '';
 
   @override
   void initState() {
     super.initState();
     _selectedLocation = widget.initialLocation;
-    _markers.add(
-      Marker(
-        markerId: const MarkerId('selected-location'),
-        position: _selectedLocation,
-      ),
-    );
     _getAddressFromCoordinates();
   }
 
@@ -40,15 +34,33 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       ),
       body: Stack(
         children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _selectedLocation,
-              zoom: 14.0,
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _selectedLocation,
+              initialZoom: 14.0,
+              onTap: (tapPosition, latLng) => _selectLocation(latLng),
             ),
-            onMapCreated: _onMapCreated,
-            onTap: _selectLocation,
-            zoomControlsEnabled: false,
-            markers: _markers,
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.example.welangflood',
+              ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: _selectedLocation,
+                    width: 40,
+                    height: 40,
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Colors.red,
+                      size: 40,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           Positioned(
             top: 16,
@@ -60,7 +72,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
+                    color: Colors.grey.withValues(alpha: 0.5),
                     spreadRadius: 1,
                     blurRadius: 5,
                     offset: const Offset(0, 3),
@@ -110,20 +122,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     );
   }
 
-  void _onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
-  }
-
   void _selectLocation(LatLng latLng) {
     setState(() {
       _selectedLocation = latLng;
-      _markers.clear();
-      _markers.add(
-        Marker(
-          markerId: const MarkerId('selected-location'),
-          position: _selectedLocation,
-        ),
-      );
     });
     _getAddressFromCoordinates();
   }
@@ -133,16 +134,21 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   }
 
   void _zoomIn() {
-    _mapController.animateCamera(CameraUpdate.zoomIn());
+    final currentZoom = _mapController.camera.zoom;
+    _mapController.move(_mapController.camera.center, currentZoom + 1);
   }
 
   void _zoomOut() {
-    _mapController.animateCamera(CameraUpdate.zoomOut());
+    final currentZoom = _mapController.camera.zoom;
+    _mapController.move(_mapController.camera.center, currentZoom - 1);
   }
 
   Future<void> _getAddressFromCoordinates() async {
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(_selectedLocation.latitude, _selectedLocation.longitude);
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        _selectedLocation.latitude,
+        _selectedLocation.longitude,
+      );
       if (placemarks.isNotEmpty) {
         Placemark placemark = placemarks.first;
         String address = '${placemark.name ?? ''}, ${placemark.street ?? ''}, ${placemark.subLocality ?? ''}, ${placemark.locality ?? ''}, ${placemark.administrativeArea ?? ''}, ${placemark.country ?? ''}';
