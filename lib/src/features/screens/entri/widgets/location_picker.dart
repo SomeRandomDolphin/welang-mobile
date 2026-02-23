@@ -79,6 +79,13 @@ class _LocationPickerState extends State<LocationPicker> {
                             ),
                           ],
                         ),
+                        RichAttributionWidget(
+                          attributions: const [
+                            TextSourceAttribution(
+                              '© OpenStreetMap contributors',
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),

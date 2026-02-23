@@ -12,7 +12,7 @@ Future<void> loginWithAuth0(BuildContext context) async {
     final credentials = await auth0.webAuthentication(scheme: 'com.example.welangflood').login(
       scopes: {'openid', 'profile', 'email'},
     );
-    print('Access token: ${credentials.accessToken}');
+    print('Login successful with Auth0 credentials.');
     if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const Home()),
