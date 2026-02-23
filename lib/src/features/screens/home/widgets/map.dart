@@ -114,6 +114,13 @@ class _ViewMapState extends State<ViewMap> {
                       userAgentPackageName: 'com.example.welangflood',
                     ),
                     MarkerLayer(markers: markers),
+                    RichAttributionWidget(
+                      attributions: const [
+                        TextSourceAttribution(
+                          '© OpenStreetMap contributors',
+                        ),
+                      ],
+                    ),
                   ],
                 ),
                 Positioned(

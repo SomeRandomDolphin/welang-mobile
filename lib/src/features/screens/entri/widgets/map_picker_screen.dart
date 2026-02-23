@@ -60,6 +60,13 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                   ),
                 ],
               ),
+              RichAttributionWidget(
+                attributions: const [
+                  TextSourceAttribution(
+                    '© OpenStreetMap contributors',
+                  ),
+                ],
+              ),
             ],
           ),
           Positioned(
