@@ -1,43 +1,76 @@
 import 'package:flutter/material.dart';
-import 'package:welangflood/src/constants/color.dart';
 import 'package:intl/intl.dart';
+import 'package:welangflood/src/constants/color.dart';
 
 class CalenderForm extends StatefulWidget {
   final Function(DateTime)? onDateSelected;
-  const CalenderForm({Key? key, this.onDateSelected}) : super(key: key);
+  const CalenderForm({super.key, this.onDateSelected});
 
   @override
-  _CalenderFormState createState() => _CalenderFormState();
+  State<CalenderForm> createState() => _CalenderFormState();
 }
 
 class _CalenderFormState extends State<CalenderForm> {
-  TextEditingController _dateController = TextEditingController();
-  DateTime? _selectedDate;
+  final TextEditingController _dateController = TextEditingController();
+  late DateTime _selectedDateTime;
 
-  Future<void> _selectDate(BuildContext context) async {
+  @override
+  void initState() {
+    super.initState();
+    _selectedDateTime = DateTime.now();
+    _dateController.text = DateFormat('yyyy-MM-dd HH:mm').format(_selectedDateTime);
+
+    // Notify parent AFTER the build phase is complete — fixes setState during build error
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onDateSelected?.call(_selectedDateTime);
+    });
+  }
+
+  Future<void> _pickDateTime(BuildContext context) async {
+    // Step 1: pick date
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedDateTime,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: tPrimaryColor,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      builder: (context, child) => Theme(
+        data: ThemeData.light().copyWith(
+          colorScheme: const ColorScheme.light(primary: tPrimaryColor),
+        ),
+        child: child!,
+      ),
     );
-    if (pickedDate != null && pickedDate != _selectedDate) {
-      setState(() {
-        _selectedDate = pickedDate;
-        _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate!);
-      });
-      widget.onDateSelected?.call(_selectedDate!);
-    }
+    if (pickedDate == null || !mounted) return;
+
+    // Step 2: pick time
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+      builder: (context, child) => Theme(
+        data: ThemeData.light().copyWith(
+          colorScheme: const ColorScheme.light(primary: tPrimaryColor),
+        ),
+        child: child!,
+      ),
+    );
+    if (pickedTime == null) return;
+
+    final combined = DateTime(
+      pickedDate.year, pickedDate.month, pickedDate.day,
+      pickedTime.hour, pickedTime.minute,
+    );
+
+    setState(() {
+      _selectedDateTime = combined;
+      _dateController.text = DateFormat('yyyy-MM-dd HH:mm').format(combined);
+    });
+    widget.onDateSelected?.call(combined);
+  }
+
+  @override
+  void dispose() {
+    _dateController.dispose();
+    super.dispose();
   }
 
   @override
@@ -51,48 +84,33 @@ class _CalenderFormState extends State<CalenderForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Tanggal Survei',
-            style: TextStyle(
-              color: tPrimaryColor,
-              fontSize: 16,
-              fontFamily: 'Inter',
-            ),
+            'Tanggal & Waktu Survei',
+            style: TextStyle(color: tPrimaryColor, fontSize: 16, fontFamily: 'Inter'),
           ),
           SizedBox(height: screenSize.height * 0.01),
-          Container(
-            height: screenSize.height * 0.055,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: tPrimaryColor),
-            ),
-            child: Padding(
+          GestureDetector(
+            onTap: () => _pickDateTime(context),
+            child: Container(
+              height: screenSize.height * 0.055,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: tPrimaryColor),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
-                      readOnly: true,
-                      controller: _dateController,
-                      onTap: () => _selectDate(context),
-                      textAlign: TextAlign.left,
-                      decoration: const InputDecoration(
-                        hintText: 'Pilih tanggal',
-                        hintStyle: TextStyle(
-                            color: tSecondaryColor
-                        ),
-                        border: InputBorder.none,
-                        floatingLabelBehavior: FloatingLabelBehavior.never,
+                    child: Text(
+                      _dateController.text,
+                      style: const TextStyle(
+                        color: tPrimaryColor,
+                        fontFamily: 'Inter',
+                        fontSize: 15,
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: GestureDetector(
-                      onTap: () => _selectDate(context),
-                      child: const Icon(Icons.calendar_today, color: tPrimaryColor),
-                    ),
-                  ),
+                  const Icon(Icons.calendar_today, color: tPrimaryColor, size: 18),
                 ],
               ),
             ),
@@ -102,4 +120,3 @@ class _CalenderFormState extends State<CalenderForm> {
     );
   }
 }
-

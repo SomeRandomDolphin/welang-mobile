@@ -23,7 +23,8 @@ class EntriSurvei extends StatefulWidget {
 class _EntriSurveiState extends State<EntriSurvei> {
   final _tinggiController = TextEditingController();
 
-  DateTime? _selectedDate;
+  // Pre-initialize to now() — matches the calendar widget's default
+  DateTime _selectedDate = DateTime.now();
   LatLng? _selectedLocation;
   String? _fotoPath;
   bool _isLoading = false;
@@ -42,10 +43,6 @@ class _EntriSurveiState extends State<EntriSurvei> {
       setState(() => _errorMessage = 'Tinggi genangan harus diisi dengan angka');
       return;
     }
-    if (_selectedDate == null) {
-      setState(() => _errorMessage = 'Tanggal survei harus dipilih');
-      return;
-    }
     if (_selectedLocation == null) {
       setState(() => _errorMessage = 'Lokasi survei harus dipilih di peta');
       return;
@@ -55,7 +52,7 @@ class _EntriSurveiState extends State<EntriSurvei> {
 
     final survei = Survei(
       tinggi: tinggi,
-      tanggalKejadian: _selectedDate!,
+      tanggalKejadian: _selectedDate,
       latitude: _selectedLocation!.latitude,
       longitude: _selectedLocation!.longitude,
     );
@@ -65,7 +62,10 @@ class _EntriSurveiState extends State<EntriSurvei> {
 
     if (result.success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data survei berhasil dikirim!'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Data survei berhasil dikirim!'),
+          backgroundColor: Colors.green,
+        ),
       );
       Navigator.pushAndRemoveUntil(
         context,
@@ -103,7 +103,7 @@ class _EntriSurveiState extends State<EntriSurvei> {
                   SizedBox(height: screenSize.width * 0.08),
 
                   CalenderForm(
-                    onDateSelected: (date) => setState(() => _selectedDate = date),
+                    onDateSelected: (date) => _selectedDate = date,
                   ),
                   SizedBox(height: screenSize.width * 0.02),
 
@@ -120,7 +120,7 @@ class _EntriSurveiState extends State<EntriSurvei> {
                     hintText: 'Foto (opsional)',
                     isValid: true,
                     isRequired: false,
-                    onPhotoSelected: (path) => setState(() => _fotoPath = path),
+                    onPhotoSelected: (path) => _fotoPath = path.isEmpty ? null : path,
                   ),
                   SizedBox(height: screenSize.width * 0.02),
 
@@ -133,9 +133,11 @@ class _EntriSurveiState extends State<EntriSurvei> {
                   if (_errorMessage != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      child: Text(_errorMessage!,
+                      child: Text(
+                        _errorMessage!,
                         style: const TextStyle(color: Colors.red, fontSize: 13, fontFamily: 'Inter'),
-                        textAlign: TextAlign.center),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
 
                   SizedBox(height: screenSize.width * 0.02),

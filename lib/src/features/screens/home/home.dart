@@ -19,11 +19,15 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   String? _startDate;
   String? _endDate;
+  double? _minHeight;
+  double? _maxHeight;
 
-  void _onFilterChanged(String? start, String? end) {
+  void _onFilterChanged(String? start, String? end, double? minH, double? maxH) {
     setState(() {
       _startDate = start;
       _endDate = end;
+      _minHeight = minH;
+      _maxHeight = maxH;
     });
   }
 
@@ -36,6 +40,9 @@ class _HomeState extends State<Home> {
       (route) => false,
     );
   }
+
+  bool get _hasFilter =>
+      _startDate != null || _endDate != null || _minHeight != null || _maxHeight != null;
 
   @override
   Widget build(BuildContext context) {
@@ -54,10 +61,11 @@ class _HomeState extends State<Home> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Top bar
                 Row(
                   children: [
                     FilterButton(onFilterChanged: _onFilterChanged),
-                    SizedBox(width: screenWidth * 0.10),
+                    SizedBox(width: screenWidth * 0.08),
                     const Expanded(child: HeadlineText()),
                     IconButton(
                       icon: const Icon(Icons.logout, color: tPrimaryColor),
@@ -67,31 +75,34 @@ class _HomeState extends State<Home> {
                   ],
                 ),
 
-                if (_startDate != null || _endDate != null)
+                // Active filter chip
+                if (_hasFilter)
                   Padding(
-                    padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                    padding: const EdgeInsets.only(top: 6.0, bottom: 2.0),
                     child: Row(
                       children: [
-                        const Icon(Icons.filter_alt, size: 14, color: tSecondaryColor),
+                        const Icon(Icons.filter_alt, size: 13, color: tSecondaryColor),
                         const SizedBox(width: 4),
-                        Text(
-                          '${_startDate ?? '...'} → ${_endDate ?? '...'}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: tSecondaryColor,
-                            fontFamily: 'Inter',
+                        Expanded(
+                          child: Text(
+                            [
+                              if (_startDate != null || _endDate != null)
+                                '${_startDate ?? '...'} → ${_endDate ?? '...'}',
+                              if (_minHeight != null || _maxHeight != null)
+                                '${_minHeight?.toStringAsFixed(0) ?? '0'} – ${_maxHeight?.toStringAsFixed(0) ?? '∞'} cm',
+                            ].join('  |  '),
+                            style: const TextStyle(fontSize: 11, color: tSecondaryColor, fontFamily: 'Inter'),
                           ),
                         ),
-                        const SizedBox(width: 8),
                         GestureDetector(
-                          onTap: () => _onFilterChanged(null, null),
-                          child: const Icon(Icons.close, size: 14, color: tSecondaryColor),
+                          onTap: () => _onFilterChanged(null, null, null, null),
+                          child: const Icon(Icons.close, size: 13, color: tSecondaryColor),
                         ),
                       ],
                     ),
                   ),
 
-                SizedBox(height: screenHeight * 0.04),
+                SizedBox(height: screenHeight * 0.03),
                 const SubtitleText(text: tEntriSurvei),
                 SizedBox(height: screenHeight * 0.01),
                 const EntriButton(),
@@ -105,6 +116,8 @@ class _HomeState extends State<Home> {
                   child: ViewMap(
                     startDate: _startDate,
                     endDate: _endDate,
+                    minHeight: _minHeight,
+                    maxHeight: _maxHeight,
                   ),
                 ),
 

@@ -8,8 +8,16 @@ import 'package:welangflood/src/services/survey_service.dart';
 class ViewMap extends StatefulWidget {
   final String? startDate;
   final String? endDate;
+  final double? minHeight;
+  final double? maxHeight;
 
-  const ViewMap({super.key, this.startDate, this.endDate});
+  const ViewMap({
+    super.key,
+    this.startDate,
+    this.endDate,
+    this.minHeight,
+    this.maxHeight,
+  });
 
   @override
   State<ViewMap> createState() => _ViewMapState();
@@ -17,7 +25,7 @@ class ViewMap extends StatefulWidget {
 
 class _ViewMapState extends State<ViewMap> {
   final MapController _mapController = MapController();
-  List<Survei> _surveys = [];
+  List<Survei> _allSurveys = [];
   bool _isLoading = true;
 
   @override
@@ -29,8 +37,13 @@ class _ViewMapState extends State<ViewMap> {
   @override
   void didUpdateWidget(ViewMap oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // Reload from API only when date filter changes
     if (oldWidget.startDate != widget.startDate || oldWidget.endDate != widget.endDate) {
       _loadSurveys();
+    }
+    // Height filter is applied client-side — just rebuild
+    if (oldWidget.minHeight != widget.minHeight || oldWidget.maxHeight != widget.maxHeight) {
+      setState(() {});
     }
   }
 
@@ -41,7 +54,18 @@ class _ViewMapState extends State<ViewMap> {
       end: widget.endDate,
     );
     if (!mounted) return;
-    setState(() { _surveys = surveys; _isLoading = false; });
+    setState(() {
+      _allSurveys = surveys;
+      _isLoading = false;
+    });
+  }
+
+  List<Survei> get _filteredSurveys {
+    return _allSurveys.where((s) {
+      if (widget.minHeight != null && s.tinggi < widget.minHeight!) return false;
+      if (widget.maxHeight != null && s.tinggi >= widget.maxHeight!) return false;
+      return true;
+    }).toList();
   }
 
   Color _markerColor(double tinggi) {
@@ -65,21 +89,25 @@ class _ViewMapState extends State<ViewMap> {
       context: context,
       builder: (_) => AlertDialog(
         title: Text('Tinggi: ${survei.tinggi.toStringAsFixed(1)} cm',
-          style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
+            style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(_categoryLabel(survei.tinggi),
-              style: TextStyle(color: _markerColor(survei.tinggi), fontWeight: FontWeight.w600)),
+                style: TextStyle(color: _markerColor(survei.tinggi), fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             if (survei.userName != null)
-              Text('Petugas: ${survei.userName}', style: const TextStyle(fontFamily: 'Inter')),
-            Text('Tanggal: ${survei.tanggalKejadian.toLocal().toString().split(' ')[0]}',
-              style: const TextStyle(fontFamily: 'Inter')),
+              Text('Petugas: ${survei.userName}',
+                  style: const TextStyle(fontFamily: 'Inter')),
+            Text(
+              'Tanggal: ${survei.tanggalKejadian.toLocal().toString().split(' ')[0]}',
+              style: const TextStyle(fontFamily: 'Inter'),
+            ),
             Text(
               'Koordinat: ${survei.latitude.toStringAsFixed(5)}, ${survei.longitude.toStringAsFixed(5)}',
-              style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: tSecondaryColor)),
+              style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: tSecondaryColor),
+            ),
           ],
         ),
         actions: [
@@ -95,8 +123,9 @@ class _ViewMapState extends State<ViewMap> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final surveys = _filteredSurveys;
 
-    final markers = _surveys.map((survei) => Marker(
+    final markers = surveys.map((survei) => Marker(
       point: LatLng(survei.latitude, survei.longitude),
       width: 40,
       height: 40,
@@ -145,23 +174,31 @@ class _ViewMapState extends State<ViewMap> {
                 if (_isLoading)
                   Container(
                     color: Colors.white.withValues(alpha: 0.7),
-                    child: const Center(child: CircularProgressIndicator(color: tPrimaryColor)),
+                    child: const Center(
+                        child: CircularProgressIndicator(color: tPrimaryColor)),
                   ),
 
-                if (!_isLoading && _surveys.isEmpty)
+                if (!_isLoading && surveys.isEmpty)
                   const Center(
                     child: Text('Tidak ada data survei untuk periode ini',
-                      style: TextStyle(color: tSecondaryColor, fontFamily: 'Inter', fontSize: 13)),
+                        style: TextStyle(
+                            color: tSecondaryColor, fontFamily: 'Inter', fontSize: 13)),
                   ),
 
-                if (!_isLoading && _surveys.isNotEmpty)
+                if (!_isLoading && surveys.isNotEmpty)
                   Positioned(
                     top: 12, left: 12,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(color: tPrimaryColor, borderRadius: BorderRadius.circular(20)),
-                      child: Text('${_surveys.length} titik banjir',
-                        style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500)),
+                      decoration: BoxDecoration(
+                          color: tPrimaryColor,
+                          borderRadius: BorderRadius.circular(20)),
+                      child: Text('${surveys.length} titik banjir',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w500)),
                     ),
                   ),
 

@@ -1,9 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:welangflood/src/constants/text_string.dart';
-import 'package:welangflood/src/dummy_data/dummy_data.dart';
+import 'package:welangflood/src/services/auth_service.dart';
 
-class HeadlineText extends StatelessWidget {
-  const HeadlineText({Key? key}) : super(key: key);
+class HeadlineText extends StatefulWidget {
+  const HeadlineText({super.key});
+
+  @override
+  State<HeadlineText> createState() => _HeadlineTextState();
+}
+
+class _HeadlineTextState extends State<HeadlineText> {
+  String _username = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final user = await AuthService.me();
+    if (!mounted) return;
+    setState(() {
+      _username = user?['name'] ?? 'Pengguna';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,6 +36,7 @@ class HeadlineText extends StatelessWidget {
       children: [
         Text(
           tTitleBeranda,
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: screenWidth * 0.035,
             fontFamily: 'Inter',
@@ -23,7 +45,8 @@ class HeadlineText extends StatelessWidget {
         ),
         SizedBox(height: screenHeight * 0.01),
         Text(
-          userDummyData.isNotEmpty ? userDummyData[0]['username'] : 'Username Tidak Ditemukan',
+          _username.isEmpty ? '...' : _username,
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: screenWidth * 0.045,
             fontFamily: 'Inter',
