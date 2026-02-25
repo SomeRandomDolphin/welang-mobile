@@ -12,7 +12,7 @@ import 'package:welangflood/src/features/screens/register/widgets/alreadytext.da
 import 'package:welangflood/src/services/auth_service.dart';
 
 class Login extends StatefulWidget {
-  const Login({Key? key}) : super(key: key);
+  const Login({super.key});
 
   @override
   State<Login> createState() => _LoginState();
@@ -21,7 +21,6 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final _emailController    = TextEditingController();
   final _passwordController = TextEditingController();
-
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -36,32 +35,23 @@ class _LoginState extends State<Login> {
     final email    = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
-    // Basic client-side validation
     if (email.isEmpty || password.isEmpty) {
       setState(() => _errorMessage = 'Email dan kata sandi harus diisi');
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    setState(() { _isLoading = true; _errorMessage = null; });
 
     final result = await AuthService.login(email: email, password: password);
-
     if (!mounted) return;
 
     if (result.success) {
-      // Navigate to Home and remove all previous routes
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const Home()),
         (route) => false,
       );
     } else {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = result.message;
-      });
+      setState(() { _isLoading = false; _errorMessage = result.message; });
     }
   }
 
@@ -83,13 +73,10 @@ class _LoginState extends State<Login> {
                       children: [
                         SizedBox(height: screenSize.height * 0.20),
                         const Headline(text: tTitleLogin),
-
                         SizedBox(height: screenSize.height * 0.01),
                         const Subtitle(text: tSubtitleLogin),
-
                         SizedBox(height: screenSize.height * 0.03),
 
-                        // Email field
                         OutlinedForm(
                           labelText: 'welang@gmail.com',
                           hintText: 'Email',
@@ -97,10 +84,7 @@ class _LoginState extends State<Login> {
                           isRequired: true,
                           isValid: true,
                         ),
-
                         SizedBox(height: screenSize.height * 0.006),
-
-                        // Password field
                         OutlinedForm(
                           labelText: 'Masukkan kata sandi',
                           hintText: 'Kata Sandi',
@@ -109,26 +93,16 @@ class _LoginState extends State<Login> {
                           isValid: true,
                           icon: Icons.visibility,
                         ),
-
                         SizedBox(height: screenSize.height * 0.02),
 
-                        // Error message
                         if (_errorMessage != null)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Text(
-                              _errorMessage!,
-                              style: const TextStyle(
-                                color: Colors.red,
-                                fontSize: 13,
-                                fontFamily: 'Inter',
-                              ),
-                            ),
+                            child: Text(_errorMessage!,
+                              style: const TextStyle(color: Colors.red, fontSize: 13, fontFamily: 'Inter')),
                           ),
 
                         SizedBox(height: screenSize.height * 0.028),
-
-                        // Login button
                         CustomElevatedButton(
                           height: screenSize.height * 0.055,
                           onPressed: _isLoading ? () {} : _handleLogin,
@@ -140,12 +114,8 @@ class _LoginState extends State<Login> {
                     ),
                   ),
                 ),
-
-                // Navigate to Register
                 CustomRichText(
-                  onPressed: () {
-                    TransitionUtils.navigateWithFadeTransition(context, const Register());
-                  },
+                  onPressed: () => TransitionUtils.navigateWithFadeTransition(context, const Register()),
                   alreadyText: tRichTitleLogin,
                   signText: tButtonRegister,
                 ),
@@ -153,14 +123,10 @@ class _LoginState extends State<Login> {
               ],
             ),
           ),
-
-          // Full-screen loading overlay
           if (_isLoading)
             Container(
-              color: Colors.black.withOpacity(0.3),
-              child: const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              ),
+              color: Colors.black.withValues(alpha: 0.3),
+              child: const Center(child: CircularProgressIndicator(color: Colors.white)),
             ),
         ],
       ),

@@ -9,7 +9,7 @@ class ViewMap extends StatefulWidget {
   final String? startDate;
   final String? endDate;
 
-  const ViewMap({Key? key, this.startDate, this.endDate}) : super(key: key);
+  const ViewMap({super.key, this.startDate, this.endDate});
 
   @override
   State<ViewMap> createState() => _ViewMapState();
@@ -19,7 +19,6 @@ class _ViewMapState extends State<ViewMap> {
   final MapController _mapController = MapController();
   List<Survei> _surveys = [];
   bool _isLoading = true;
-  String? _errorMessage;
 
   @override
   void initState() {
@@ -27,7 +26,6 @@ class _ViewMapState extends State<ViewMap> {
     _loadSurveys();
   }
 
-  // Reload whenever date filter changes from parent
   @override
   void didUpdateWidget(ViewMap oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -37,30 +35,15 @@ class _ViewMapState extends State<ViewMap> {
   }
 
   Future<void> _loadSurveys() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
+    setState(() => _isLoading = true);
     final surveys = await SurveyService.getSurveys(
       start: widget.startDate,
       end: widget.endDate,
     );
-
     if (!mounted) return;
-
-    setState(() {
-      _surveys = surveys;
-      _isLoading = false;
-    });
+    setState(() { _surveys = surveys; _isLoading = false; });
   }
 
-  /// Color-code markers by flood height matching category ranges:
-  /// Cat 1: 0–10cm → green
-  /// Cat 2: 10–30cm → yellow
-  /// Cat 3: 30–50cm → orange
-  /// Cat 4: 50–100cm → deep orange
-  /// Cat 5: >100cm → red
   Color _markerColor(double tinggi) {
     if (tinggi < 10)  return Colors.green;
     if (tinggi < 30)  return Colors.yellow.shade700;
@@ -77,31 +60,26 @@ class _ViewMapState extends State<ViewMap> {
     return 'Kategori 5 (>100 cm)';
   }
 
-  void _showSurveyDetail(BuildContext context, Survei survei) {
+  void _showDetail(BuildContext context, Survei survei) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(
-          'Tinggi: ${survei.tinggi.toStringAsFixed(1)} cm',
-          style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold),
-        ),
+        title: Text('Tinggi: ${survei.tinggi.toStringAsFixed(1)} cm',
+          style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(_categoryLabel(survei.tinggi),
-                style: TextStyle(color: _markerColor(survei.tinggi), fontWeight: FontWeight.w600)),
+              style: TextStyle(color: _markerColor(survei.tinggi), fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             if (survei.userName != null)
               Text('Petugas: ${survei.userName}', style: const TextStyle(fontFamily: 'Inter')),
-            Text(
-              'Tanggal: ${survei.tanggalKejadian.toLocal().toString().split(' ')[0]}',
-              style: const TextStyle(fontFamily: 'Inter'),
-            ),
+            Text('Tanggal: ${survei.tanggalKejadian.toLocal().toString().split(' ')[0]}',
+              style: const TextStyle(fontFamily: 'Inter')),
             Text(
               'Koordinat: ${survei.latitude.toStringAsFixed(5)}, ${survei.longitude.toStringAsFixed(5)}',
-              style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: tSecondaryColor),
-            ),
+              style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: tSecondaryColor)),
           ],
         ),
         actions: [
@@ -118,21 +96,15 @@ class _ViewMapState extends State<ViewMap> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
 
-    final markers = _surveys.map((survei) {
-      return Marker(
-        point: LatLng(survei.latitude, survei.longitude),
-        width: 40,
-        height: 40,
-        child: GestureDetector(
-          onTap: () => _showSurveyDetail(context, survei),
-          child: Icon(
-            Icons.location_on,
-            color: _markerColor(survei.tinggi),
-            size: 40,
-          ),
-        ),
-      );
-    }).toList();
+    final markers = _surveys.map((survei) => Marker(
+      point: LatLng(survei.latitude, survei.longitude),
+      width: 40,
+      height: 40,
+      child: GestureDetector(
+        onTap: () => _showDetail(context, survei),
+        child: Icon(Icons.location_on, color: _markerColor(survei.tinggi), size: 40),
+      ),
+    )).toList();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -170,58 +142,31 @@ class _ViewMapState extends State<ViewMap> {
                   ],
                 ),
 
-                // Loading overlay
                 if (_isLoading)
                   Container(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     child: const Center(child: CircularProgressIndicator(color: tPrimaryColor)),
                   ),
 
-                // Error overlay
-                if (!_isLoading && _errorMessage != null)
-                  Center(
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red, fontFamily: 'Inter'),
-                    ),
-                  ),
-
-                // Empty state
-                if (!_isLoading && _surveys.isEmpty && _errorMessage == null)
+                if (!_isLoading && _surveys.isEmpty)
                   const Center(
-                    child: Text(
-                      'Tidak ada data survei untuk periode ini',
-                      style: TextStyle(color: tSecondaryColor, fontFamily: 'Inter', fontSize: 13),
-                    ),
+                    child: Text('Tidak ada data survei untuk periode ini',
+                      style: TextStyle(color: tSecondaryColor, fontFamily: 'Inter', fontSize: 13)),
                   ),
 
-                // Survey count badge
                 if (!_isLoading && _surveys.isNotEmpty)
                   Positioned(
-                    top: 12,
-                    left: 12,
+                    top: 12, left: 12,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: tPrimaryColor,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '${_surveys.length} titik banjir',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      decoration: BoxDecoration(color: tPrimaryColor, borderRadius: BorderRadius.circular(20)),
+                      child: Text('${_surveys.length} titik banjir',
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500)),
                     ),
                   ),
 
-                // Refresh button
                 Positioned(
-                  bottom: 16,
-                  left: 16,
+                  bottom: 16, left: 16,
                   child: FloatingActionButton.small(
                     backgroundColor: tPrimaryColor,
                     tooltip: 'Muat ulang',
@@ -230,25 +175,15 @@ class _ViewMapState extends State<ViewMap> {
                   ),
                 ),
 
-                // Zoom controls
                 Positioned(
-                  top: 16,
-                  right: 16,
+                  top: 16, right: 16,
                   child: Column(
                     children: [
-                      _zoomButton(Icons.add, () {
-                        _mapController.move(
-                          _mapController.camera.center,
-                          _mapController.camera.zoom + 1,
-                        );
-                      }),
+                      _zoomBtn(Icons.add, () => _mapController.move(
+                          _mapController.camera.center, _mapController.camera.zoom + 1)),
                       const SizedBox(height: 8),
-                      _zoomButton(Icons.remove, () {
-                        _mapController.move(
-                          _mapController.camera.center,
-                          _mapController.camera.zoom - 1,
-                        );
-                      }),
+                      _zoomBtn(Icons.remove, () => _mapController.move(
+                          _mapController.camera.center, _mapController.camera.zoom - 1)),
                     ],
                   ),
                 ),
@@ -260,18 +195,11 @@ class _ViewMapState extends State<ViewMap> {
     );
   }
 
-  Widget _zoomButton(IconData icon, VoidCallback onTap) {
+  Widget _zoomBtn(IconData icon, VoidCallback onTap) {
     return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: tPrimaryColor,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: IconButton(
-        onPressed: onTap,
-        icon: Icon(icon, color: Colors.white),
-      ),
+      width: 44, height: 44,
+      decoration: BoxDecoration(color: tPrimaryColor, borderRadius: BorderRadius.circular(6)),
+      child: IconButton(onPressed: onTap, icon: Icon(icon, color: Colors.white)),
     );
   }
 }

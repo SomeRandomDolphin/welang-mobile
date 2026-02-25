@@ -14,7 +14,7 @@ import 'package:welangflood/src/features/screens/home/home.dart';
 import 'package:welangflood/src/services/survey_service.dart';
 
 class EntriSurvei extends StatefulWidget {
-  const EntriSurvei({Key? key}) : super(key: key);
+  const EntriSurvei({super.key});
 
   @override
   State<EntriSurvei> createState() => _EntriSurveiState();
@@ -26,7 +26,6 @@ class _EntriSurveiState extends State<EntriSurvei> {
   DateTime? _selectedDate;
   LatLng? _selectedLocation;
   String? _fotoPath;
-
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -37,11 +36,9 @@ class _EntriSurveiState extends State<EntriSurvei> {
   }
 
   Future<void> _handleSubmit() async {
-    final tinggiText = _tinggiController.text.trim();
-    final tinggi = double.tryParse(tinggiText);
+    final tinggi = double.tryParse(_tinggiController.text.trim());
 
-    // Validation
-    if (tinggi == null || tinggiText.isEmpty) {
+    if (tinggi == null) {
       setState(() => _errorMessage = 'Tinggi genangan harus diisi dengan angka');
       return;
     }
@@ -54,10 +51,7 @@ class _EntriSurveiState extends State<EntriSurvei> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    setState(() { _isLoading = true; _errorMessage = null; });
 
     final survei = Survei(
       tinggi: tinggi,
@@ -67,27 +61,19 @@ class _EntriSurveiState extends State<EntriSurvei> {
     );
 
     final result = await SurveyService.submitSurvey(survei, fotoPath: _fotoPath);
-
     if (!mounted) return;
 
     if (result.success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Data survei berhasil dikirim!'),
-          backgroundColor: Colors.green,
-        ),
+        const SnackBar(content: Text('Data survei berhasil dikirim!'), backgroundColor: Colors.green),
       );
-      // Go back to Home and refresh
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const Home()),
         (route) => false,
       );
     } else {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = result.message;
-      });
+      setState(() { _isLoading = false; _errorMessage = result.message; });
     }
   }
 
@@ -116,14 +102,11 @@ class _EntriSurveiState extends State<EntriSurvei> {
                   const Subtitle(text: tInputSubtitle),
                   SizedBox(height: screenSize.width * 0.08),
 
-                  // Tanggal
                   CalenderForm(
                     onDateSelected: (date) => setState(() => _selectedDate = date),
                   ),
-
                   SizedBox(height: screenSize.width * 0.02),
 
-                  // Tinggi genangan
                   OutlinedForm(
                     labelText: 'Dalam bentuk cm',
                     hintText: 'Tinggi Genangan',
@@ -131,45 +114,31 @@ class _EntriSurveiState extends State<EntriSurvei> {
                     isValid: true,
                     controller: _tinggiController,
                   ),
-
                   SizedBox(height: screenSize.width * 0.02),
 
-                  // Foto (optional)
                   PhotoPicker(
                     hintText: 'Foto (opsional)',
                     isValid: true,
                     isRequired: false,
                     onPhotoSelected: (path) => setState(() => _fotoPath = path),
                   ),
-
                   SizedBox(height: screenSize.width * 0.02),
 
-                  // Location picker
                   LocationPicker(
                     hintText: 'Lokasi',
                     onLocationSelected: (latLng) => setState(() => _selectedLocation = latLng),
                   ),
-
                   SizedBox(height: screenSize.width * 0.04),
 
-                  // Error message
                   if (_errorMessage != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      child: Text(
-                        _errorMessage!,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontSize: 13,
-                          fontFamily: 'Inter',
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                      child: Text(_errorMessage!,
+                        style: const TextStyle(color: Colors.red, fontSize: 13, fontFamily: 'Inter'),
+                        textAlign: TextAlign.center),
                     ),
 
                   SizedBox(height: screenSize.width * 0.02),
-
-                  // Submit button
                   CustomElevatedButton(
                     height: screenSize.height * 0.055,
                     onPressed: _isLoading ? () {} : _handleSubmit,
@@ -177,20 +146,16 @@ class _EntriSurveiState extends State<EntriSurvei> {
                     foregroundColor: tTertiaryColor,
                     backgroundColor: tPrimaryColor,
                   ),
-
                   SizedBox(height: screenSize.width * 0.06),
                 ],
               ),
             ),
           ),
 
-          // Loading overlay
           if (_isLoading)
             Container(
-              color: Colors.black.withOpacity(0.3),
-              child: const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              ),
+              color: Colors.black.withValues(alpha: 0.3),
+              child: const Center(child: CircularProgressIndicator(color: Colors.white)),
             ),
         ],
       ),

@@ -10,8 +10,6 @@ class SurveyResult {
 }
 
 class SurveyService {
-  /// Submit a new flood survey entry.
-  /// [fotoPath] is optional — pass null if no photo was selected.
   static Future<SurveyResult> submitSurvey(Survei survei, {String? fotoPath}) async {
     final response = await ApiService.postMultipart(
       ApiConstants.entry,
@@ -26,12 +24,11 @@ class SurveyService {
     );
   }
 
-  /// Fetch surveys from the API with optional date filters.
-  /// Returns an empty list on failure.
   static Future<List<Survei>> getSurveys({String? start, String? end}) async {
     final response = await ApiService.get(
       ApiConstants.surveys,
       queryParams: {
+        // Fixed: use null-aware map entries
         if (start != null) 'start': start,
         if (end != null) 'end': end,
       },

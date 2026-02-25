@@ -1,13 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:welangflood/src/constants/api_constants.dart';
 
 class ApiService {
-  // -------------------------------------------------------
-  // Token storage
-  // -------------------------------------------------------
-
   static Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('jwt_token', token);
@@ -28,10 +23,6 @@ class ApiService {
     return token != null && token.isNotEmpty;
   }
 
-  // -------------------------------------------------------
-  // Auth header helper
-  // -------------------------------------------------------
-
   static Future<Map<String, String>> _authHeaders() async {
     final token = await getToken();
     return {
@@ -41,11 +32,6 @@ class ApiService {
     };
   }
 
-  // -------------------------------------------------------
-  // HTTP helpers
-  // -------------------------------------------------------
-
-  /// POST with JSON body — for login, register, logout
   static Future<Map<String, dynamic>> post(
     String url,
     Map<String, dynamic> body, {
@@ -66,7 +52,6 @@ class ApiService {
     }
   }
 
-  /// GET with optional query params — for surveys, categories, me
   static Future<Map<String, dynamic>> get(
     String url, {
     Map<String, String>? queryParams,
@@ -74,18 +59,15 @@ class ApiService {
     try {
       final uri = Uri.parse(url).replace(queryParameters: queryParams);
       final headers = await _authHeaders();
-
       final response = await http
           .get(uri, headers: headers)
           .timeout(const Duration(seconds: 15));
-
       return _handleResponse(response);
     } catch (e) {
       return {'status': 'error', 'message': 'Tidak dapat terhubung ke server: $e', 'data': null};
     }
   }
 
-  /// Multipart POST — for survey entry with optional photo
   static Future<Map<String, dynamic>> postMultipart(
     String url,
     Map<String, String> fields, {
@@ -95,7 +77,6 @@ class ApiService {
     try {
       final token = await getToken();
       final request = http.MultipartRequest('POST', Uri.parse(url));
-
       request.headers['Authorization'] = 'Bearer $token';
       request.headers['Accept'] = 'application/json';
       request.fields.addAll(fields);
@@ -106,21 +87,15 @@ class ApiService {
 
       final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(streamedResponse);
-
       return _handleResponse(response);
     } catch (e) {
       return {'status': 'error', 'message': 'Tidak dapat terhubung ke server: $e', 'data': null};
     }
   }
 
-  // -------------------------------------------------------
-  // Response handler
-  // -------------------------------------------------------
-
   static Map<String, dynamic> _handleResponse(http.Response response) {
     try {
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      return body;
+      return jsonDecode(response.body) as Map<String, dynamic>;
     } catch (_) {
       return {
         'status': 'error',
