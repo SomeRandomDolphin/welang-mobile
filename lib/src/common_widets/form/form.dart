@@ -9,6 +9,7 @@ class OutlinedForm extends StatefulWidget {
   final bool isValid;
   final IconData? icon;
   final Function(String)? onChanged; // Tambahkan parameter onChanged
+  final bool fitParentWidth;
 
   const OutlinedForm({
     Key? key,
@@ -19,6 +20,7 @@ class OutlinedForm extends StatefulWidget {
     required this.isValid,
     this.icon,
     this.onChanged, // Tambahkan parameter onChanged
+    this.fitParentWidth = false,
   }) : super(key: key);
 
   @override
@@ -33,7 +35,9 @@ class _OutlinedFormState extends State<OutlinedForm> {
     final Size screenSize = MediaQuery.of(context).size;
 
     return Container(
-      width: screenSize.width >= 375 ? 375 : screenSize.width - 30,
+      width: widget.fitParentWidth
+          ? double.infinity
+          : (screenSize.width >= 375 ? 375 : screenSize.width - 30),
       margin: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
