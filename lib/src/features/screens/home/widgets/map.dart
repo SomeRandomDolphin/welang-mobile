@@ -3,6 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:welangflood/src/constants/color.dart';
 import 'package:welangflood/src/features/screens/entri/widgets/data_survei.dart';
+import 'package:welangflood/src/models/flood_category.dart';
+import 'package:welangflood/src/services/category_service.dart';
 import 'package:welangflood/src/services/survey_service.dart';
 
 class ViewMap extends StatefulWidget {
@@ -26,11 +28,14 @@ class ViewMap extends StatefulWidget {
 class _ViewMapState extends State<ViewMap> {
   final MapController _mapController = MapController();
   List<Survei> _allSurveys = [];
+  List<FloodCategory> _categories = [];
   bool _isLoading = true;
+  bool _isLoadingCategory = true;
 
   @override
   void initState() {
     super.initState();
+    _loadCategories();
     _loadSurveys();
   }
 
@@ -69,6 +74,23 @@ class _ViewMapState extends State<ViewMap> {
     }
   }
 
+  Future<void> _loadCategories({bool forceRefresh = false}) async {
+    setState(() => _isLoadingCategory = true);
+    final categories = await CategoryService.getCategories(forceRefresh: forceRefresh);
+    if (!mounted) return;
+    setState(() {
+      _categories = categories;
+      _isLoadingCategory = false;
+    });
+  }
+
+  Future<void> _reloadAll() async {
+    await Future.wait([
+      _loadCategories(forceRefresh: true),
+      _loadSurveys(),
+    ]);
+  }
+
   List<Survei> get _filteredSurveys {
     return _allSurveys.where((s) {
       if (widget.minHeight != null && s.tinggi < widget.minHeight!) return false;
@@ -77,20 +99,54 @@ class _ViewMapState extends State<ViewMap> {
     }).toList();
   }
 
-  Color _markerColor(double tinggi) {
-    if (tinggi < 10)  return Colors.green;
-    if (tinggi < 30)  return Colors.yellow.shade700;
-    if (tinggi < 50)  return Colors.orange;
+  FloodCategory? _findCategory(double tinggi) {
+    for (final category in _categories) {
+      if (category.containsHeight(tinggi)) {
+        return category;
+      }
+    }
+    return null;
+  }
+
+  Color _fallbackMarkerColor(double tinggi) {
+    if (tinggi < 10) return Colors.green;
+    if (tinggi < 30) return Colors.yellow.shade700;
+    if (tinggi < 50) return Colors.orange;
     if (tinggi < 100) return Colors.deepOrange;
     return Colors.red;
   }
 
   String _categoryLabel(double tinggi) {
-    if (tinggi < 10)  return 'Kategori 1 (0–10 cm)';
-    if (tinggi < 30)  return 'Kategori 2 (10–30 cm)';
-    if (tinggi < 50)  return 'Kategori 3 (30–50 cm)';
-    if (tinggi < 100) return 'Kategori 4 (50–100 cm)';
-    return 'Kategori 5 (>100 cm)';
+    final category = _findCategory(tinggi);
+    if (category != null) {
+      return category.displayLabel;
+    }
+    return 'Kategori tidak ditemukan';
+  }
+
+  Widget _buildMarkerIcon(Survei survei) {
+    final category = _findCategory(survei.tinggi);
+    if (category?.iconUrl != null && category!.iconUrl!.isNotEmpty) {
+      return Image.network(
+        category.iconUrl!,
+        width: 30,
+        height: 30,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) {
+          return Icon(
+            Icons.location_on,
+            color: _fallbackMarkerColor(survei.tinggi),
+            size: 38,
+          );
+        },
+      );
+    }
+
+    return Icon(
+      Icons.location_on,
+      color: _fallbackMarkerColor(survei.tinggi),
+      size: 38,
+    );
   }
 
   void _showDetail(BuildContext context, Survei survei) {
@@ -104,7 +160,7 @@ class _ViewMapState extends State<ViewMap> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(_categoryLabel(survei.tinggi),
-                style: TextStyle(color: _markerColor(survei.tinggi), fontWeight: FontWeight.w600)),
+                style: TextStyle(color: _fallbackMarkerColor(survei.tinggi), fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             if (survei.userName != null)
               Text('Petugas: ${survei.userName}',
@@ -134,15 +190,17 @@ class _ViewMapState extends State<ViewMap> {
     final screenHeight = MediaQuery.of(context).size.height;
     final surveys = _filteredSurveys;
 
-    final markers = surveys.map((survei) => Marker(
-      point: LatLng(survei.latitude, survei.longitude),
-      width: 40,
-      height: 40,
-      child: GestureDetector(
-        onTap: () => _showDetail(context, survei),
-        child: Icon(Icons.location_on, color: _markerColor(survei.tinggi), size: 40),
-      ),
-    )).toList();
+    final markers = surveys
+        .map((survei) => Marker(
+              point: LatLng(survei.latitude, survei.longitude),
+              width: 40,
+              height: 40,
+              child: GestureDetector(
+                onTap: () => _showDetail(context, survei),
+                child: _buildMarkerIcon(survei),
+              ),
+            ))
+        .toList();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -216,10 +274,90 @@ class _ViewMapState extends State<ViewMap> {
                   child: FloatingActionButton.small(
                     backgroundColor: tPrimaryColor,
                     tooltip: 'Muat ulang',
-                    onPressed: _loadSurveys,
+                    onPressed: _reloadAll,
                     child: const Icon(Icons.refresh, color: Colors.white),
                   ),
                 ),
+
+                if (_isLoadingCategory)
+                  const Positioned(
+                    bottom: 16,
+                    right: 16,
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: tPrimaryColor),
+                    ),
+                  ),
+
+                if (_categories.isNotEmpty)
+                  Positioned(
+                    bottom: 16,
+                    right: 16,
+                    child: Container(
+                      width: 168,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Legenda Tinggi Genanga',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: tSecondaryColor,
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          ..._categories.map((category) => Padding(
+                                padding: const EdgeInsets.only(bottom: 5),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: (category.iconUrl != null && category.iconUrl!.isNotEmpty)
+                                          ? Image.network(
+                                              category.iconUrl!,
+                                              fit: BoxFit.contain,
+                                              errorBuilder: (_, __, ___) => const Icon(
+                                                Icons.location_on,
+                                                size: 15,
+                                                color: tPrimaryColor,
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.location_on,
+                                              size: 15,
+                                              color: tPrimaryColor,
+                                            ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        'Kategori ${category.jenis}: ${category.rangeLabel}',
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          color: tSecondaryColor,
+                                          fontFamily: 'Inter',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )),
+                        ],
+                      ),
+                    ),
+                  ),
 
                 Positioned(
                   top: 16, right: 16,

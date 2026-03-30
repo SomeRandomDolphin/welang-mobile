@@ -4,7 +4,13 @@ import 'package:welangflood/src/constants/color.dart';
 
 class CalenderForm extends StatefulWidget {
   final Function(DateTime)? onDateSelected;
-  const CalenderForm({super.key, this.onDateSelected});
+  final bool fitParentWidth;
+
+  const CalenderForm({
+    super.key,
+    this.onDateSelected,
+    this.fitParentWidth = false,
+  });
 
   @override
   State<CalenderForm> createState() => _CalenderFormState();
@@ -78,7 +84,9 @@ class _CalenderFormState extends State<CalenderForm> {
     final Size screenSize = MediaQuery.of(context).size;
 
     return Container(
-      width: screenSize.width >= 375 ? 375 : screenSize.width - 30,
+      width: widget.fitParentWidth
+          ? double.infinity
+          : (screenSize.width >= 375 ? 375 : screenSize.width - 30),
       margin: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
