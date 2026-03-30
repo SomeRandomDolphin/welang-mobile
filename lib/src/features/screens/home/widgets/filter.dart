@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:welangflood/src/constants/color.dart';
+import 'package:welangflood/src/models/flood_category.dart';
+import 'package:welangflood/src/services/category_service.dart';
 
 class FilterButton extends StatefulWidget {
   final void Function(String? start, String? end, double? minHeight, double? maxHeight) onFilterChanged;
@@ -17,25 +19,34 @@ class _FilterButtonState extends State<FilterButton> {
   double? _minHeight;
   double? _maxHeight;
   int _selectedCategoryIndex = 0;
+  bool _isLoadingCategories = true;
+  List<FloodCategory> _categories = [];
 
-  static const List<Map<String, dynamic>> _categories = [
-    {'label': 'Semua Level',              'min': null,  'max': null,  'color': null},
-    {'label': 'Kat. 1 — 0 s/d 10 cm',    'min': 0.0,   'max': 10.0,  'color': Colors.green},
-    {'label': 'Kat. 2 — 10 s/d 30 cm',   'min': 10.0,  'max': 30.0,  'color': null},
-    {'label': 'Kat. 3 — 30 s/d 50 cm',   'min': 30.0,  'max': 50.0,  'color': Colors.orange},
-    {'label': 'Kat. 4 — 50 s/d 100 cm',  'min': 50.0,  'max': 100.0, 'color': Colors.deepOrange},
-    {'label': 'Kat. 5 — lebih 100 cm',   'min': 100.0, 'max': null,  'color': Colors.red},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
 
-  Color _dotColor(int idx) {
-    switch (idx) {
-      case 1: return Colors.green;
-      case 2: return Colors.yellow.shade700;
-      case 3: return Colors.orange;
-      case 4: return Colors.deepOrange;
-      case 5: return Colors.red;
-      default: return Colors.grey;
-    }
+  Future<void> _loadCategories() async {
+    setState(() => _isLoadingCategories = true);
+    final categories = await CategoryService.getCategories();
+    if (!mounted) return;
+    setState(() {
+      _categories = categories;
+      _isLoadingCategories = false;
+      if (_selectedCategoryIndex > _categories.length) {
+        _selectedCategoryIndex = 0;
+      }
+    });
+  }
+
+  Color _dotColor(double tinggi) {
+    if (tinggi < 10) return Colors.green;
+    if (tinggi < 30) return Colors.yellow.shade700;
+    if (tinggi < 50) return Colors.orange;
+    if (tinggi < 100) return Colors.deepOrange;
+    return Colors.red;
   }
 
   bool get _hasActiveFilter =>
@@ -50,25 +61,6 @@ class _FilterButtonState extends State<FilterButton> {
       _selectedCategoryIndex = 0;
     });
     widget.onFilterChanged(null, null, null, null);
-  }
-
-  Future<void> _pickDate(BuildContext ctx, bool isStart, void Function(void Function()) setS) async {
-    final picked = await showDatePicker(
-      context: ctx,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      builder: (c, child) => Theme(
-        data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: tPrimaryColor)),
-        child: child!,
-      ),
-    );
-    if (picked != null) {
-      setS(() {
-        if (isStart) _startDate = DateFormat('yyyy-MM-dd').format(picked);
-        else _endDate = DateFormat('yyyy-MM-dd').format(picked);
-      });
-    }
   }
 
   Future<void> _showFilterDialog(BuildContext context) async {
@@ -149,46 +141,72 @@ class _FilterButtonState extends State<FilterButton> {
                 const Text('Level Banjir',
                     style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 14)),
                 const SizedBox(height: 8),
-                ..._categories.asMap().entries.map((entry) {
-                  final idx = entry.key;
-                  final cat = entry.value;
-                  final selected = tempCatIdx == idx;
-                  return GestureDetector(
-                    onTap: () => setS(() => tempCatIdx = idx),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: selected ? tPrimaryColor : Colors.transparent,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                            color: selected ? tPrimaryColor : Colors.grey.shade300),
-                      ),
-                      child: Row(
-                        children: [
-                          if (idx == 0)
-                            const Icon(Icons.filter_list, size: 14, color: tSecondaryColor)
-                          else
-                            Container(
-                              width: 12, height: 12,
-                              decoration: BoxDecoration(
-                                  color: _dotColor(idx), shape: BoxShape.circle),
-                            ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(cat['label'],
+                if (_isLoadingCategories)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Center(child: CircularProgressIndicator(color: tPrimaryColor)),
+                  )
+                else
+                  ..._filterRows.asMap().entries.map((entry) {
+                    final idx = entry.key;
+                    final cat = entry.value;
+                    final selected = tempCatIdx == idx;
+                    return GestureDetector(
+                      onTap: () => setS(() => tempCatIdx = idx),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: selected ? tPrimaryColor : Colors.transparent,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                              color: selected ? tPrimaryColor : Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          children: [
+                            if (idx == 0)
+                              const Icon(Icons.filter_list, size: 14, color: tSecondaryColor)
+                            else if (cat.iconUrl != null && cat.iconUrl!.isNotEmpty)
+                              SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: Image.network(
+                                  cat.iconUrl!,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: _dotColor(cat.minHeight),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
+                              Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                    color: _dotColor(cat.minHeight), shape: BoxShape.circle),
+                              ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                idx == 0 ? 'Semua Level' : cat.displayLabel,
                                 style: TextStyle(
                                     fontSize: 13,
                                     fontFamily: 'Inter',
-                                    color: selected ? Colors.white : tPrimaryColor)),
-                          ),
-                          if (selected)
-                            const Icon(Icons.check, size: 16, color: Colors.white),
-                        ],
+                                    color: selected ? Colors.white : tPrimaryColor),
+                              ),
+                            ),
+                            if (selected)
+                              const Icon(Icons.check, size: 16, color: Colors.white),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  }),
               ],
             ),
           ),
@@ -200,13 +218,13 @@ class _FilterButtonState extends State<FilterButton> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: tPrimaryColor),
               onPressed: () {
-                final cat = _categories[tempCatIdx];
+                final cat = _filterRows[tempCatIdx];
                 setState(() {
                   _startDate = tempStart;
                   _endDate = tempEnd;
                   _selectedCategoryIndex = tempCatIdx;
-                  _minHeight = cat['min'] as double?;
-                  _maxHeight = cat['max'] as double?;
+                  _minHeight = tempCatIdx == 0 ? null : cat.minHeight;
+                  _maxHeight = tempCatIdx == 0 ? null : cat.maxHeight;
                 });
                 Navigator.pop(ctx);
                 widget.onFilterChanged(_startDate, _endDate, _minHeight, _maxHeight);
@@ -238,5 +256,12 @@ class _FilterButtonState extends State<FilterButton> {
             color: _hasActiveFilter ? Colors.blue : tPrimaryColor),
       ),
     );
+  }
+
+  List<FloodCategory> get _filterRows {
+    return [
+      const FloodCategory(jenis: 'Semua Level', minHeight: 0, maxHeight: null),
+      ..._categories,
+    ];
   }
 }
