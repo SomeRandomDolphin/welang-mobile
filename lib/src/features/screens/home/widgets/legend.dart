@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:welangflood/src/constants/color.dart';
+import 'package:welangflood/src/models/flood_category.dart';
+import 'package:welangflood/src/services/category_service.dart';
 
-class LegendWidget extends StatelessWidget {
+class LegendWidget extends StatefulWidget {
   final bool compact;
   final bool fillHeight;
 
@@ -12,9 +14,41 @@ class LegendWidget extends StatelessWidget {
   });
 
   @override
+  State<LegendWidget> createState() => _LegendWidgetState();
+}
+
+class _LegendWidgetState extends State<LegendWidget> {
+  bool _isLoading = true;
+  List<FloodCategory> _categories = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    // Force refresh so legend follows latest API category response.
+    final categories = await CategoryService.getCategories(forceRefresh: true);
+    if (!mounted) return;
+    setState(() {
+      _categories = categories;
+      _isLoading = false;
+    });
+  }
+
+  String _legendLabel(FloodCategory category) {
+    final jenis = category.jenis.trim();
+    final isNumericJenis = double.tryParse(jenis) != null;
+    if (jenis.isEmpty || isNumericJenis) {
+      return category.rangeLabel;
+    }
+    return '$jenis (${category.rangeLabel})';
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.of(context).size;
-    final double maxWidth = compact ? 220.0 : 375.0;
+    final double maxWidth = widget.compact ? 220.0 : 375.0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -24,36 +58,66 @@ class LegendWidget extends StatelessWidget {
 
         return Container(
           width: containerWidth,
-          height: fillHeight ? double.infinity : null,
+          height: widget.fillHeight ? double.infinity : null,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: tPrimaryColor),
             color: Colors.white,
           ),
           padding: EdgeInsets.symmetric(
-            horizontal: compact ? 8 : 10,
-            vertical: compact ? 8 : 10,
+            horizontal: widget.compact ? 8 : 10,
+            vertical: widget.compact ? 8 : 10,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment:
-                fillHeight ? MainAxisAlignment.spaceBetween : MainAxisAlignment.start,
+                widget.fillHeight ? MainAxisAlignment.spaceBetween : MainAxisAlignment.start,
             children: [
               Text(
                 'Legenda Tinggi Air',
                 style: TextStyle(
                   color: tPrimaryColor,
                   fontFamily: 'Inter',
-                  fontSize: compact ? 10 : 11,
+                  fontSize: widget.compact ? 10 : 11,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              // SizedBox(height: compact ? 8 : screenSize.height * 0.012),
-              const _LegendItem(color: Colors.green, label: '< 10 cm'),
-              const _LegendItem(color: Colors.yellow, label: '10 - 29 cm'),
-              const _LegendItem(color: Colors.orange, label: '30 - 49 cm'),
-              const _LegendItem(color: Colors.deepOrange, label: '50 - 99 cm'),
-              const _LegendItem(color: Colors.red, label: '>= 100 cm'),
+              const SizedBox(height: 4),
+              if (_isLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: tPrimaryColor,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                if (_categories.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 6),
+                    child: Text(
+                      'Kategori tidak tersedia',
+                      style: TextStyle(
+                        color: tSecondaryColor,
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                      ),
+                    ),
+                  )
+                else
+                  ..._categories.map(
+                    (category) => _LegendItem(
+                      iconUrl: category.iconUrl,
+                      label: _legendLabel(category),
+                      compact: widget.compact,
+                    ),
+                  ),
             ],
           ),
         );
@@ -63,10 +127,23 @@ class LegendWidget extends StatelessWidget {
 }
 
 class _LegendItem extends StatelessWidget {
-  final Color color;
+  final String? iconUrl;
   final String label;
+  final bool compact;
 
-  const _LegendItem({required this.color, required this.label});
+  const _LegendItem({
+    this.iconUrl,
+    required this.label,
+    this.compact = false,
+  });
+
+  Widget _fallbackIcon() {
+    return const Icon(
+      Icons.location_on,
+      size: 14,
+      color: tPrimaryColor,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,18 +151,24 @@ class _LegendItem extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          SizedBox(
+            width: 14,
+            height: 14,
+            child: (iconUrl != null && iconUrl!.isNotEmpty)
+                ? Image.network(
+                    iconUrl!,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => _fallbackIcon(),
+                  )
+                : _fallbackIcon(),
           ),
           const SizedBox(width: 8),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: tPrimaryColor,
               fontFamily: 'Inter',
-              fontSize: 11,
+              fontSize: compact ? 10 : 11,
             ),
           ),
         ],
