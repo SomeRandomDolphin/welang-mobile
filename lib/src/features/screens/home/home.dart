@@ -3,6 +3,7 @@ import 'package:welangflood/src/constants/color.dart';
 import 'package:welangflood/src/constants/text_string.dart';
 import 'package:welangflood/src/features/screens/home/widgets/entri_button.dart';
 import 'package:welangflood/src/features/screens/home/widgets/filter.dart';
+import 'package:welangflood/src/features/screens/home/widgets/legend.dart';
 import 'package:welangflood/src/features/screens/home/widgets/map.dart';
 import 'package:welangflood/src/features/screens/home/widgets/text/headline_text.dart';
 import 'package:welangflood/src/features/screens/home/widgets/text/subtitle_text.dart';
@@ -105,9 +106,35 @@ class _HomeState extends State<Home> {
                 SizedBox(height: screenHeight * 0.03),
                 const SubtitleText(text: tEntriSurvei),
                 SizedBox(height: screenHeight * 0.01),
-                const EntriButton(),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final sectionGap = 12.0;
+                    final equalCardHeight = 136.0;
 
-                SizedBox(height: screenHeight * 0.03),
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 6,
+                          child: SizedBox(
+                            height: equalCardHeight,
+                            child: const EntriButton(compact: true, fillHeight: true),
+                          ),
+                        ),
+                        SizedBox(width: sectionGap),
+                        Expanded(
+                          flex: 4,
+                          child: SizedBox(
+                            height: equalCardHeight,
+                            child: const LegendWidget(compact: true, fillHeight: true),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+
+                SizedBox(height: screenHeight * 0.02),
                 const SubtitleText(text: tViewPeta),
                 SizedBox(height: screenHeight * 0.01),
 

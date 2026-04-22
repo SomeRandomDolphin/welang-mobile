@@ -18,7 +18,7 @@ const String tRichSubtitle = "Masuk";
 const String tTitleBeranda = "Selamat Datang!";
 // Entri Data
 const String tEntriSurvei = "Entri Lapor Genangan";
-const String tEntriTitle = "Masukkan data-data\nlaporan genangan di lokasi secara real time";
+const String tEntriTitle = "Masukkan data-data\nlaporan genangan \ndi lokasi secara real time";
 const String tEntriButton = "Entri Sekarang!";
 // View Peta
 const String tViewPeta = "View Peta";

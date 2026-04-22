@@ -290,74 +290,74 @@ class _ViewMapState extends State<ViewMap> {
                     ),
                   ),
 
-                if (_categories.isNotEmpty)
-                  Positioned(
-                    bottom: 16,
-                    right: 16,
-                    child: Container(
-                      width: 168,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.95),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Legenda Tinggi Genanga',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: tSecondaryColor,
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          ..._categories.map((category) => Padding(
-                                padding: const EdgeInsets.only(bottom: 5),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: (category.iconUrl != null && category.iconUrl!.isNotEmpty)
-                                          ? Image.network(
-                                              category.iconUrl!,
-                                              fit: BoxFit.contain,
-                                              errorBuilder: (_, __, ___) => const Icon(
-                                                Icons.location_on,
-                                                size: 15,
-                                                color: tPrimaryColor,
-                                              ),
-                                            )
-                                          : const Icon(
-                                              Icons.location_on,
-                                              size: 15,
-                                              color: tPrimaryColor,
-                                            ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        'Kategori ${category.jenis}: ${category.rangeLabel}',
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          color: tSecondaryColor,
-                                          fontFamily: 'Inter',
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )),
-                        ],
-                      ),
-                    ),
-                  ),
+                // if (_categories.isNotEmpty)
+                //   Positioned(
+                //     bottom: 16,
+                //     right: 16,
+                //     child: Container(
+                //       width: 168,
+                //       padding: const EdgeInsets.all(10),
+                //       decoration: BoxDecoration(
+                //         color: Colors.white.withValues(alpha: 0.95),
+                //         borderRadius: BorderRadius.circular(10),
+                //         border: Border.all(color: Colors.grey.shade300),
+                //       ),
+                //       child: Column(
+                //         crossAxisAlignment: CrossAxisAlignment.start,
+                //         mainAxisSize: MainAxisSize.min,
+                //         children: [
+                //           const Text(
+                //             'Legenda Tinggi Genanga',
+                //             style: TextStyle(
+                //               fontSize: 10,
+                //               color: tSecondaryColor,
+                //               fontFamily: 'Inter',
+                //               fontWeight: FontWeight.w700,
+                //             ),
+                //           ),
+                //           const SizedBox(height: 6),
+                //           ..._categories.map((category) => Padding(
+                //                 padding: const EdgeInsets.only(bottom: 5),
+                //                 child: Row(
+                //                   crossAxisAlignment: CrossAxisAlignment.start,
+                //                   children: [
+                //                     SizedBox(
+                //                       width: 16,
+                //                       height: 16,
+                //                       child: (category.iconUrl != null && category.iconUrl!.isNotEmpty)
+                //                           ? Image.network(
+                //                               category.iconUrl!,
+                //                               fit: BoxFit.contain,
+                //                               errorBuilder: (_, __, ___) => const Icon(
+                //                                 Icons.location_on,
+                //                                 size: 15,
+                //                                 color: tPrimaryColor,
+                //                               ),
+                //                             )
+                //                           : const Icon(
+                //                               Icons.location_on,
+                //                               size: 15,
+                //                               color: tPrimaryColor,
+                //                             ),
+                //                     ),
+                //                     const SizedBox(width: 6),
+                //                     Expanded(
+                //                       child: Text(
+                //                         'Kategori ${category.jenis}: ${category.rangeLabel}',
+                //                         style: const TextStyle(
+                //                           fontSize: 10,
+                //                           color: tSecondaryColor,
+                //                           fontFamily: 'Inter',
+                //                         ),
+                //                       ),
+                //                     ),
+                //                   ],
+                //                 ),
+                //               )),
+                //         ],
+                //       ),
+                //     ),
+                //   ),
 
                 Positioned(
                   top: 16, right: 16,
