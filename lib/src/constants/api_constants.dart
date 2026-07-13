@@ -6,7 +6,7 @@ class ApiConstants {
   // Physical device  → 'http://YOUR_PC_LOCAL_IP:8000'  e.g. http://192.168.1.5:8000
   // Production       → 'https://yourdomain.com'
   // -------------------------------------------------------
-  static const String baseUrl = 'http://10.0.2.2:9000';
+  static const String baseUrl = 'https://www.its.ac.id/tsipil/informasibanjir/public';
 
   // Endpoints
   static const String register   = '$baseUrl/api/mobile/register';
