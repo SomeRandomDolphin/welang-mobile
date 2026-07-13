@@ -111,6 +111,34 @@ class _LocationPickerState extends State<LocationPicker> {
         children: [
           Text(widget.hintText,
               style: const TextStyle(color: tPrimaryColor, fontSize: 16, fontFamily: 'Inter')),
+          const SizedBox(height: 6),
+          const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.my_location, size: 16, color: tPrimaryColor),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Tekan ikon lokasi: menunjuk lokasi otomatis',
+                  style: TextStyle(color: tSecondaryColor, fontSize: 12, fontFamily: 'Inter'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.touch_app_outlined, size: 16, color: tPrimaryColor),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Koreksi lokasi: tekan titik yang tepat pada peta',
+                  style: TextStyle(color: tSecondaryColor, fontSize: 12, fontFamily: 'Inter'),
+                ),
+              ),
+            ],
+          ),
           SizedBox(height: screenSize.height * 0.01),
 
           ClipRRect(

@@ -17,13 +17,13 @@ const String tRichSubtitle = "Masuk";
 // Beranda
 const String tTitleBeranda = "Selamat Datang!";
 // Entri Data
-const String tEntriSurvei = "Entri Lapor Genangan";
-const String tEntriTitle = "Masukkan data-data\nlaporan genangan di lokasi secara real time";
+const String tEntriSurvei = "Entri Laporan Banjir/Genangan";
+const String tEntriTitle = "Masukkan data laporan\nbanjir/genangan dari\nlokasi kejadian";
 const String tEntriButton = "Entri Sekarang!";
 // View Peta
 const String tViewPeta = "View Peta";
 
 // Input Data
-const String tInputTitle = "Entri Data Lapor Genangan";
-const String tInputSubtitle = "Masukkan data laporan genangan yang telah dikumpulkan\nuntuk menampilkannya di halaman beranda.";
+const String tInputTitle = "Entri Data Laporan Banjir/Genangan";
+const String tInputSubtitle = "Masukkan data laporan banjir/genangan dari lokasi kejadian\nuntuk menampilkannya di halaman beranda.";
 const String tInputButton = "Unggah";

@@ -41,4 +41,30 @@ class SurveyService {
 
     return [];
   }
+
+  static String? toAbsolutePhotoUrl(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+
+    final normalized = raw.trim();
+    final uri = Uri.tryParse(normalized);
+    if (uri != null && uri.hasScheme) {
+      return normalized;
+    }
+
+    final base = ApiConstants.baseUrl.endsWith('/')
+        ? ApiConstants.baseUrl
+        : '${ApiConstants.baseUrl}/';
+
+    var path = normalized.startsWith('/') ? normalized.substring(1) : normalized;
+
+    // Laravel payloads can be '/storage/...', 'storage/...', 'public/storage/...', or filename only.
+    if (path.startsWith('public/')) {
+      path = path.substring('public/'.length);
+    }
+    if (!path.startsWith('storage/')) {
+      path = 'storage/$path';
+    }
+
+    return Uri.parse(base).resolve(path).toString();
+  }
 }

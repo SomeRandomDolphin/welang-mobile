@@ -9,6 +9,7 @@ class PhotoPicker extends StatefulWidget {
   final bool isRequired;
   final TextEditingController? controller;
   final bool isValid;
+  final bool fitParentWidth;
   final Function(String)? onPhotoSelected;
 
   const PhotoPicker({
@@ -17,6 +18,7 @@ class PhotoPicker extends StatefulWidget {
     required this.isRequired,
     this.controller,
     required this.isValid,
+    this.fitParentWidth = false,
     this.onPhotoSelected,
   });
 
@@ -141,7 +143,9 @@ class _PhotoPickerState extends State<PhotoPicker> {
   @override
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
-    final containerWidth = screenSize.width >= 375 ? 375.0 : screenSize.width - 30.0;
+    final containerWidth = widget.fitParentWidth
+        ? double.infinity
+        : (screenSize.width >= 375 ? 375.0 : screenSize.width - 30.0);
 
     return Container(
       width: containerWidth,

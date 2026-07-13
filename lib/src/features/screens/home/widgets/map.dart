@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -132,7 +133,7 @@ class _ViewMapState extends State<ViewMap> {
         width: 30,
         height: 30,
         fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) {
+        errorBuilder: (context, error, stackTrace) {
           return Icon(
             Icons.location_on,
             color: _fallbackMarkerColor(survei.tinggi),
@@ -150,37 +151,162 @@ class _ViewMapState extends State<ViewMap> {
   }
 
   void _showDetail(BuildContext context, Survei survei) {
+    final photoUrl = SurveyService.toAbsolutePhotoUrl(survei.foto);
+    if (kDebugMode) {
+      debugPrint('Survey photo raw: ${survei.foto}');
+      debugPrint('Survey photo url: $photoUrl');
+    }
+
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Tinggi: ${survei.tinggi.toStringAsFixed(1)} cm',
-            style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(_categoryLabel(survei.tinggi),
-                style: TextStyle(color: _fallbackMarkerColor(survei.tinggi), fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            if (survei.userName != null)
-              Text('Petugas: ${survei.userName}',
-                  style: const TextStyle(fontFamily: 'Inter')),
-            Text(
-              'Tanggal: ${survei.tanggalKejadian.toLocal().toString().split(' ')[0]}',
-              style: const TextStyle(fontFamily: 'Inter'),
+      builder: (_) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 300),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tinggi: ${survei.tinggi.toStringAsFixed(1)} cm',
+                    style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  const SizedBox(height: 12),
+                  if (photoUrl != null) ...[
+                    GestureDetector(
+                      onTap: () => _showFullScreenPhoto(context, photoUrl),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: SizedBox(
+                          width: 270,
+                          height: 170,
+                          child: Image.network(
+                            photoUrl,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                alignment: Alignment.center,
+                                color: Colors.grey.shade200,
+                                child: const CircularProgressIndicator(color: tPrimaryColor),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              alignment: Alignment.center,
+                              color: Colors.grey.shade200,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.broken_image_outlined, color: tSecondaryColor),
+                                  const SizedBox(height: 6),
+                                  const Text(
+                                    'Foto tidak tersedia',
+                                    style: TextStyle(fontFamily: 'Inter', color: tSecondaryColor),
+                                  ),
+                                  if (kDebugMode)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4, left: 10, right: 10),
+                                      child: Text(
+                                        '$error',
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 10, color: tSecondaryColor),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Tap foto untuk perbesar',
+                      style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: tSecondaryColor),
+                    ),
+
+                  ],
+                  Text(_categoryLabel(survei.tinggi),
+                      style: TextStyle(color: _fallbackMarkerColor(survei.tinggi), fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  if (survei.userName != null)
+                    Text('Petugas: ${survei.userName}',
+                        style: const TextStyle(fontFamily: 'Inter')),
+                  Text(
+                    'Tanggal: ${survei.tanggalKejadian.toLocal().toString().split(' ')[0]}',
+                    style: const TextStyle(fontFamily: 'Inter'),
+                  ),
+                  Text(
+                    'Koordinat: ${survei.latitude.toStringAsFixed(5)}, ${survei.longitude.toStringAsFixed(5)}',
+                    style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: tSecondaryColor),
+                  ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Tutup', style: TextStyle(color: tPrimaryColor)),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            Text(
-              'Koordinat: ${survei.latitude.toStringAsFixed(5)}, ${survei.longitude.toStringAsFixed(5)}',
-              style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: tSecondaryColor),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showFullScreenPhoto(BuildContext context, String photoUrl) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (_) => Dialog(
+        insetPadding: EdgeInsets.zero,
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: InteractiveViewer(
+                minScale: 1,
+                maxScale: 4,
+                child: Center(
+                  child: Image.network(
+                    photoUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) => const Center(
+                      child: Text(
+                        'Gagal memuat foto',
+                        style: TextStyle(color: Colors.white, fontFamily: 'Inter'),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 36,
+              right: 16,
+              child: IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                tooltip: 'Tutup',
+              ),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Tutup', style: TextStyle(color: tPrimaryColor)),
-          ),
-        ],
       ),
     );
   }
@@ -290,74 +416,74 @@ class _ViewMapState extends State<ViewMap> {
                     ),
                   ),
 
-                if (_categories.isNotEmpty)
-                  Positioned(
-                    bottom: 16,
-                    right: 16,
-                    child: Container(
-                      width: 168,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.95),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Legenda Tinggi Genanga',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: tSecondaryColor,
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          ..._categories.map((category) => Padding(
-                                padding: const EdgeInsets.only(bottom: 5),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: (category.iconUrl != null && category.iconUrl!.isNotEmpty)
-                                          ? Image.network(
-                                              category.iconUrl!,
-                                              fit: BoxFit.contain,
-                                              errorBuilder: (_, __, ___) => const Icon(
-                                                Icons.location_on,
-                                                size: 15,
-                                                color: tPrimaryColor,
-                                              ),
-                                            )
-                                          : const Icon(
-                                              Icons.location_on,
-                                              size: 15,
-                                              color: tPrimaryColor,
-                                            ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        'Kategori ${category.jenis}: ${category.rangeLabel}',
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          color: tSecondaryColor,
-                                          fontFamily: 'Inter',
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )),
-                        ],
-                      ),
-                    ),
-                  ),
+                // if (_categories.isNotEmpty)
+                //   Positioned(
+                //     bottom: 16,
+                //     right: 16,
+                //     child: Container(
+                //       width: 168,
+                //       padding: const EdgeInsets.all(10),
+                //       decoration: BoxDecoration(
+                //         color: Colors.white.withValues(alpha: 0.95),
+                //         borderRadius: BorderRadius.circular(10),
+                //         border: Border.all(color: Colors.grey.shade300),
+                //       ),
+                //       child: Column(
+                //         crossAxisAlignment: CrossAxisAlignment.start,
+                //         mainAxisSize: MainAxisSize.min,
+                //         children: [
+                //           const Text(
+                //             'Legenda Tinggi Genanga',
+                //             style: TextStyle(
+                //               fontSize: 10,
+                //               color: tSecondaryColor,
+                //               fontFamily: 'Inter',
+                //               fontWeight: FontWeight.w700,
+                //             ),
+                //           ),
+                //           const SizedBox(height: 6),
+                //           ..._categories.map((category) => Padding(
+                //                 padding: const EdgeInsets.only(bottom: 5),
+                //                 child: Row(
+                //                   crossAxisAlignment: CrossAxisAlignment.start,
+                //                   children: [
+                //                     SizedBox(
+                //                       width: 16,
+                //                       height: 16,
+                //                       child: (category.iconUrl != null && category.iconUrl!.isNotEmpty)
+                //                           ? Image.network(
+                //                               category.iconUrl!,
+                //                               fit: BoxFit.contain,
+                //                               errorBuilder: (_, __, ___) => const Icon(
+                //                                 Icons.location_on,
+                //                                 size: 15,
+                //                                 color: tPrimaryColor,
+                //                               ),
+                //                             )
+                //                           : const Icon(
+                //                               Icons.location_on,
+                //                               size: 15,
+                //                               color: tPrimaryColor,
+                //                             ),
+                //                     ),
+                //                     const SizedBox(width: 6),
+                //                     Expanded(
+                //                       child: Text(
+                //                         'Kategori ${category.jenis}: ${category.rangeLabel}',
+                //                         style: const TextStyle(
+                //                           fontSize: 10,
+                //                           color: tSecondaryColor,
+                //                           fontFamily: 'Inter',
+                //                         ),
+                //                       ),
+                //                     ),
+                //                   ],
+                //                 ),
+                //               )),
+                //         ],
+                //       ),
+                //     ),
+                //   ),
 
                 Positioned(
                   top: 16, right: 16,

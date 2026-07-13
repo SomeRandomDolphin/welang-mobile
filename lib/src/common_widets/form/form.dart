@@ -7,24 +7,24 @@ class OutlinedForm extends StatefulWidget {
   final TextEditingController? controller;
   final bool isRequired;
   final bool isValid;
+  final bool fitParentWidth;
   final IconData? icon;
   final Function(String)? onChanged; // Tambahkan parameter onChanged
-  final bool fitParentWidth;
 
   const OutlinedForm({
-    Key? key,
+    super.key,
     required this.labelText,
     required this.hintText,
     this.controller,
     required this.isRequired,
     required this.isValid,
+    this.fitParentWidth = false,
     this.icon,
     this.onChanged, // Tambahkan parameter onChanged
-    this.fitParentWidth = false,
-  }) : super(key: key);
+  });
 
   @override
-  _OutlinedFormState createState() => _OutlinedFormState();
+  State<OutlinedForm> createState() => _OutlinedFormState();
 }
 
 class _OutlinedFormState extends State<OutlinedForm> {

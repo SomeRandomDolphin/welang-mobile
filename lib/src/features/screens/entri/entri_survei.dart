@@ -22,6 +22,7 @@ class EntriSurvei extends StatefulWidget {
 
 class _EntriSurveiState extends State<EntriSurvei> {
   final _tinggiController = TextEditingController();
+  final _noteController = TextEditingController();
 
   static const List<_HeightGuide> _heightGuides = [
     _HeightGuide(patokan: 'Setumit dewasa', perkiraan: '5-10 cm', minCm: 5, maxCm: 10),
@@ -53,6 +54,7 @@ class _EntriSurveiState extends State<EntriSurvei> {
   void dispose() {
     _tinggiController.removeListener(_onTinggiChanged);
     _tinggiController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -163,6 +165,7 @@ class _EntriSurveiState extends State<EntriSurvei> {
     final survei = Survei(
       tinggi: tinggi,
       tanggalKejadian: _selectedDate,
+      catatan: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
       latitude: _selectedLocation!.latitude,
       longitude: _selectedLocation!.longitude,
     );
@@ -173,7 +176,7 @@ class _EntriSurveiState extends State<EntriSurvei> {
     if (result.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Data laporan genangan berhasil dikirim!'),
+          content: Text('Data laporan banjir/genangan berhasil dikirim!'),
           backgroundColor: Colors.green,
         ),
       );
@@ -205,17 +208,39 @@ class _EntriSurveiState extends State<EntriSurvei> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Center(
-              child: Column(
-                children: [
-                  SizedBox(height: screenSize.height * 0.03),
-                  const Headline(text: tInputTitle),
-                  const SizedBox(height: 8),
-                  const Subtitle(text: tInputSubtitle),
-                  SizedBox(height: screenSize.width * 0.08),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          child: CustomElevatedButton(
+            height: screenSize.height * 0.055,
+            onPressed: _isLoading ? () {} : _handleSubmit,
+            text: _isLoading ? 'Mengirim...' : tInputButton,
+            foregroundColor: tTertiaryColor,
+            backgroundColor: tPrimaryColor,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        top: false,
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              child: Center(
+                child: Column(
+                  children: [
+                    SizedBox(height: screenSize.height * 0.03),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Headline(text: tInputTitle),
+                          SizedBox(height: 8),
+                          Subtitle(text: tInputSubtitle),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: screenSize.width * 0.08),
 
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -341,11 +366,33 @@ class _EntriSurveiState extends State<EntriSurvei> {
                   ),
                   SizedBox(height: screenSize.width * 0.02),
 
-                  PhotoPicker(
-                    hintText: 'Foto (opsional)',
-                    isValid: true,
-                    isRequired: false,
-                    onPhotoSelected: (path) => _fotoPath = path.isEmpty ? null : path,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: PhotoPicker(
+                            hintText: 'Foto (opsional)',
+                            isValid: true,
+                            isRequired: false,
+                            fitParentWidth: true,
+                            onPhotoSelected: (path) => _fotoPath = path.isEmpty ? null : path,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedForm(
+                            labelText: 'Catatan',
+                            hintText: 'Catatan (opsional)',
+                            isRequired: false,
+                            isValid: true,
+                            fitParentWidth: true,
+                            controller: _noteController,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   SizedBox(height: screenSize.width * 0.02),
 
@@ -353,7 +400,7 @@ class _EntriSurveiState extends State<EntriSurvei> {
                     hintText: 'Lokasi',
                     onLocationSelected: (latLng) => setState(() => _selectedLocation = latLng),
                   ),
-                  SizedBox(height: screenSize.width * 0.04),
+                  const SizedBox(height: 16),
 
                   if (_errorMessage != null)
                     Padding(
@@ -365,26 +412,19 @@ class _EntriSurveiState extends State<EntriSurvei> {
                       ),
                     ),
 
-                  SizedBox(height: screenSize.width * 0.02),
-                  CustomElevatedButton(
-                    height: screenSize.height * 0.055,
-                    onPressed: _isLoading ? () {} : _handleSubmit,
-                    text: _isLoading ? 'Mengirim...' : tInputButton,
-                    foregroundColor: tTertiaryColor,
-                    backgroundColor: tPrimaryColor,
-                  ),
-                  SizedBox(height: screenSize.width * 0.06),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
           ),
 
-          if (_isLoading)
-            Container(
-              color: Colors.black.withValues(alpha: 0.3),
-              child: const Center(child: CircularProgressIndicator(color: Colors.white)),
-            ),
-        ],
+            if (_isLoading)
+              Container(
+                color: Colors.black.withValues(alpha: 0.3),
+                child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+              ),
+          ],
+        ),
       ),
     );
   }
